@@ -93,16 +93,17 @@
 <section id="contact">
   <div class="wrap">
     <h2>Get in touch</h2>
-    <p class="lead">Tell us about your business and we'll text you back within minutes. Prefer to talk? Call <a href="tel:+15736335388">(573) 633‑5388</a> — if we miss you, we'll follow up by text.</p>
+    <p class="lead">Tell us about your business and we'll get back to you fast — by email, phone, or text, your choice. Prefer to talk? Call <a href="tel:+15736335388">(573) 633‑5388</a>.</p>
     <form id="cd-contact-form">
       <input name="name" type="text" required placeholder="Your name">
-      <input name="phone" type="tel" required placeholder="Mobile number">
+      <input name="email" type="email" placeholder="Email address">
+      <input name="phone" type="tel" placeholder="Mobile number (optional)">
       <textarea name="message" rows="4" required placeholder="What can we help with?"></textarea>
       <label class="consent">
-        <input type="checkbox" name="smsConsent" required>
-        <span>By providing your phone number and checking this box, you agree to receive text messages from <strong>Cuda Digital</strong> related to your inquiry. Message frequency varies. Message &amp; data rates may apply. Reply <strong>STOP</strong> to opt out, <strong>HELP</strong> for help. See our <a href="./sms-terms.html">SMS Terms</a> and <a href="./privacy.html">Privacy Policy</a>.</span>
+        <input type="checkbox" name="smsConsent">
+        <span><em>Optional:</em> check this box to agree to receive text messages from <strong>Cuda Digital</strong> related to your inquiry. Message frequency varies. Message &amp; data rates may apply. Reply <strong>STOP</strong> to opt out, <strong>HELP</strong> for help. See our <a href="./sms-terms.html">SMS Terms</a> and <a href="./privacy.html">Privacy Policy</a>. Consent is not a condition of doing business with us — leave this unchecked and we'll reply by email or a phone call instead.</span>
       </label>
-      <button type="submit">Send — we'll text you back</button>
+      <button type="submit">Send message</button>
       <p id="cd-form-status"></p>
     </form>
   </div>
@@ -124,15 +125,26 @@
   var status = document.getElementById("cd-form-status");
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    status.style.display = "block";
+    var email = form.elements.email.value.trim();
+    var phone = form.elements.phone.value.trim();
+    if (!email && !phone) {
+      status.textContent = "Please provide an email address or a phone number so we can reach you.";
+      return;
+    }
+    if (form.elements.smsConsent.checked && !phone) {
+      status.textContent = "You checked the text-message box — add your mobile number, or uncheck it and we'll reply by email.";
+      return;
+    }
     var data = {
       name: form.elements.name.value.trim(),
-      phone: form.elements.phone.value.trim(),
+      email: email,
+      phone: phone,
       message: form.elements.message.value.trim(),
       smsConsent: form.elements.smsConsent.checked,
       source: "cuda digital site contact form",
       submittedAt: new Date().toISOString()
     };
-    status.style.display = "block";
     status.textContent = "Sending…";
     fetch(FORM_WEBHOOK, {
       method: "POST",
@@ -140,8 +152,9 @@
       body: JSON.stringify(data)
     }).then(function (r) {
       if (!r.ok) throw new Error("bad status " + r.status);
+      var optedIn = data.smsConsent;
       form.reset();
-      status.textContent = "Got it! Keep your phone handy — we'll text you shortly.";
+      status.textContent = optedIn ? "Got it! Keep your phone handy — we'll text you shortly." : "Got it! We'll get back to you shortly.";
     }).catch(function () {
       status.textContent = "Hmm, that didn't go through. Please email luke@cudadigital.com or call us.";
     });
